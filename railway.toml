@@ -13,7 +13,7 @@ dockerfilePath = "Dockerfile"
 [deploy]
 # Start command - runs the production entrypoint script
 # The entrypoint.sh handles initialization, database setup, and starts the app
-startCommand = "/bin/bash /app/entrypoint.sh"
+startCommand = "/home/frappe/entrypoint.sh"
 
 # Health check configuration
 # Uses Frappe's built-in ping endpoint to verify the application is running
