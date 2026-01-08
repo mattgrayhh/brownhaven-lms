@@ -15,12 +15,9 @@ dockerfilePath = "Dockerfile"
 # The entrypoint.sh handles initialization, database setup, and starts the app
 startCommand = "/home/frappe/entrypoint.sh"
 
-# Health check configuration - use root path for basic check
-healthcheckPath = "/"
-
-# Health check timeout in seconds (5 minutes)
-# Frappe initialization can take time, especially on first deployment
-healthcheckTimeout = 600
+# Disable custom health check - let Railway manage it
+# healthcheckPath = "/"
+# healthcheckTimeout = 600
 
 # Restart policy configuration
 # Restart the container if it fails unexpectedly
