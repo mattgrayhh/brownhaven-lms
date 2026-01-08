@@ -65,9 +65,10 @@ wait_for_service() {\n\
 # Wait for database\n\
 wait_for_service "${DB_HOST:-mariadb}" "${DB_PORT:-3306}" "MariaDB"\n\
 \n\
-# Parse Redis URL for host/port\n\
-REDIS_HOST=$(echo "${REDIS_URL:-redis://redis:6379}" | sed -E "s|redis://([^:]+):([0-9]+).*|\\1|")\n\
-REDIS_PORT=$(echo "${REDIS_URL:-redis://redis:6379}" | sed -E "s|redis://[^:]+:([0-9]+).*|\\1|")\n\
+# Parse Redis URL for host/port (handles redis://user:pass@host:port format)\n\
+REDIS_HOST=$(echo "${REDIS_URL:-redis://redis:6379}" | sed -E "s|redis://([^@]+@)?([^:]+):([0-9]+).*|\\2|")\n\
+REDIS_PORT=$(echo "${REDIS_URL:-redis://redis:6379}" | sed -E "s|redis://([^@]+@)?[^:]+:([0-9]+).*|\\2|")\n\
+echo "Parsed Redis host: $REDIS_HOST, port: $REDIS_PORT"\n\
 wait_for_service "$REDIS_HOST" "$REDIS_PORT" "Redis"\n\
 \n\
 cd /home/frappe\n\
