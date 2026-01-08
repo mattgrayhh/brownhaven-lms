@@ -73,15 +73,14 @@ wait_for_service "$REDIS_HOST" "$REDIS_PORT" "Redis"\n\
 \n\
 cd /home/frappe\n\
 \n\
-# Initialize bench if not exists\n\
-if [ ! -d "frappe-bench/apps/frappe" ]; then\n\
+# Initialize bench - check if Frappe is properly installed\n\
+cd frappe-bench 2>/dev/null || cd /home/frappe\n\
+if [ ! -d "frappe-bench/apps/frappe/frappe" ] || ! bench --version >/dev/null 2>&1; then\n\
     echo "Initializing Frappe bench..."\n\
+    rm -rf frappe-bench 2>/dev/null || true\n\
     bench init --skip-redis-config-generation --frappe-branch ${FRAPPE_BRANCH:-version-15} frappe-bench\n\
-    cd frappe-bench\n\
-else\n\
-    echo "Bench already exists"\n\
-    cd frappe-bench\n\
 fi\n\
+cd /home/frappe/frappe-bench\n\
 \n\
 # Configure database and Redis\n\
 echo "Configuring services..."\n\
