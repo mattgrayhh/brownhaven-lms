@@ -18,12 +18,13 @@ ENV FRAPPE_BRANCH=version-15 \
 # Switch to root for setup
 USER root
 
-# Install additional dependencies for LMS
+# Install additional dependencies for LMS and networking tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libcairo2 \
     libcairo2-dev \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
+    netcat-openbsd \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
