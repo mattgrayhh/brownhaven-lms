@@ -105,10 +105,26 @@ if [ "$LMS_INSTALLED" = "0" ]; then
 
         # Add lms to apps.txt (Frappe's app registry)
         # apps.txt is at sites/apps.txt in Frappe bench v15
+        # The app folder name is "lms" - this must match the Python module name
         echo "Current $APPS_TXT before update:"
         cat "$APPS_TXT" 2>/dev/null || echo "(apps.txt does not exist)"
 
-        # Only add lms if not already present
+        # Clean apps.txt - remove any bad entries like "frappe_lms" that might exist
+        # Only keep "frappe" and "lms" (the actual Python module names)
+        echo "Cleaning $APPS_TXT to remove invalid entries..."
+        if [ -f "$APPS_TXT" ]; then
+            # Create clean version with only valid entries
+            grep -E "^(frappe|lms)$" "$APPS_TXT" > "${APPS_TXT}.clean" 2>/dev/null || true
+            mv "${APPS_TXT}.clean" "$APPS_TXT"
+        fi
+
+        # Ensure frappe is in apps.txt (should be from bench init)
+        if ! grep -q "^frappe$" "$APPS_TXT" 2>/dev/null; then
+            echo "frappe" >> "$APPS_TXT"
+            echo "Added frappe to $APPS_TXT"
+        fi
+
+        # Add lms if not already present
         if ! grep -q "^lms$" "$APPS_TXT" 2>/dev/null; then
             echo "lms" >> "$APPS_TXT"
             echo "Added lms to $APPS_TXT"
@@ -116,7 +132,7 @@ if [ "$LMS_INSTALLED" = "0" ]; then
             echo "lms already in $APPS_TXT"
         fi
 
-        echo "$APPS_TXT contents after update:"
+        echo "$APPS_TXT contents after cleanup:"
         cat "$APPS_TXT"
 
         # Install Python package in editable mode
@@ -141,6 +157,14 @@ if [ ! -d "sites/${SITE_NAME}" ] || [ "$FORCE_REINSTALL" = "1" ]; then
     # Drop existing database if FORCE_REINSTALL
     if [ "$FORCE_REINSTALL" = "1" ] && [ -d "sites/${SITE_NAME}" ]; then
         echo "Force reinstall requested, dropping existing site..."
+        # Clean apps.txt BEFORE drop-site to avoid ModuleNotFoundError for invalid app names
+        echo "Pre-drop cleanup: ensuring apps.txt only has valid entries..."
+        if [ -f "$APPS_TXT" ]; then
+            grep -E "^(frappe|lms)$" "$APPS_TXT" > "${APPS_TXT}.clean" 2>/dev/null || echo "frappe" > "${APPS_TXT}.clean"
+            mv "${APPS_TXT}.clean" "$APPS_TXT"
+            echo "Cleaned $APPS_TXT contents:"
+            cat "$APPS_TXT"
+        fi
         bench drop-site ${SITE_NAME} --force --no-backup --root-password "${MARIADB_ROOT_PASSWORD:-admin}" || true
         rm -rf "sites/${SITE_NAME}" 2>/dev/null || true
     fi
