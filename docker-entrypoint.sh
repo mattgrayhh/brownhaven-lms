@@ -94,7 +94,8 @@ if [ ! -d "apps/lms" ]; then
         cp -r /workspace/lms apps/lms
 
         # Add lms to apps.txt (Frappe's app registry)
-        echo "lms" >> apps/apps.txt
+        # apps.txt is at bench root level, not inside apps/
+        echo "lms" >> apps.txt
 
         # Install Python package in editable mode
         ./env/bin/pip install -e apps/lms
