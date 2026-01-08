@@ -90,10 +90,17 @@ EOF
 if [ ! -d "apps/lms" ]; then
     echo "Installing LMS app..."
     if [ -d "/workspace/lms" ]; then
-        # Use bench get-app with local path to properly install dependencies
-        bench get-app /workspace/lms --skip-assets
+        # Copy app to apps directory
+        cp -r /workspace/lms apps/lms
+
+        # Install Python package in editable mode
+        ./env/bin/pip install -e apps/lms
+
+        # Run node setup for the app
+        bench setup requirements --node || true
     else
-        bench get-app lms --skip-assets
+        # Fallback to getting from GitHub
+        bench get-app https://github.com/frappe/lms --skip-assets
     fi
 fi
 
