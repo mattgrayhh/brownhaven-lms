@@ -93,10 +93,21 @@ if [ ! -d "apps/lms" ]; then
     fi
 fi
 
-# Create site if not exists
+# Create site if not exists or recreate if database is corrupt
 SITE_NAME="${SITE_NAME:-lms.localhost}"
-if [ ! -d "sites/${SITE_NAME}" ]; then
+
+# Force recreation for fresh install - check env var
+FORCE_REINSTALL="${FORCE_REINSTALL:-0}"
+
+if [ ! -d "sites/${SITE_NAME}" ] || [ "$FORCE_REINSTALL" = "1" ]; then
     echo "Creating site: ${SITE_NAME}"
+    # Drop existing database if FORCE_REINSTALL
+    if [ "$FORCE_REINSTALL" = "1" ] && [ -d "sites/${SITE_NAME}" ]; then
+        echo "Force reinstall requested, dropping existing site..."
+        bench drop-site ${SITE_NAME} --force --no-backup --root-password "${MARIADB_ROOT_PASSWORD:-admin}" || true
+        rm -rf "sites/${SITE_NAME}" 2>/dev/null || true
+    fi
+
     bench new-site ${SITE_NAME} \
         --force \
         --mariadb-root-password "${MARIADB_ROOT_PASSWORD:-admin}" \
