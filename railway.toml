@@ -1,0 +1,130 @@
+# ============================================================================
+# Railway Configuration for Frappe Learning LMS
+# ============================================================================
+# This file configures the deployment of Frappe Learning LMS on Railway.app
+# Documentation: https://docs.railway.app/deploy/config-as-code
+# ============================================================================
+
+[build]
+# Use Dockerfile for building the container image
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Start command - runs the production entrypoint script
+# The entrypoint.sh handles initialization, database setup, and starts the app
+startCommand = "/bin/bash /app/entrypoint.sh"
+
+# Health check configuration
+# Uses Frappe's built-in ping endpoint to verify the application is running
+healthcheckPath = "/api/method/frappe.ping"
+
+# Health check timeout in seconds (5 minutes)
+# Frappe initialization can take time, especially on first deployment
+healthcheckTimeout = 300
+
+# Restart policy configuration
+# Restart the container if it fails unexpectedly
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 5
+
+# ============================================================================
+# Service Configuration
+# ============================================================================
+
+[[services]]
+# Internal port where the Frappe application listens
+# This is the port inside the container that Railway will route traffic to
+internalPort = 8000
+
+# ============================================================================
+# Environment Variables Reference
+# ============================================================================
+#
+# The following environment variables should be set in Railway's dashboard:
+#
+# REQUIRED:
+# ---------
+# MARIADB_ROOT_PASSWORD - Root password for MariaDB database
+# MARIADB_DATABASE - Database name (default: lms)
+# MARIADB_USER - Database user (default: frappe)
+# MARIADB_PASSWORD - Database user password
+# DB_HOST - Database host (use Railway's internal service name)
+# DB_PORT - Database port (default: 3306)
+# REDIS_URL - Redis connection URL (format: redis://host:port)
+# SITE_NAME - Your Railway domain or custom domain
+# ADMIN_PASSWORD - Administrator password for Frappe
+# FRAPPE_DEVELOPER_MODE - Set to 0 for production, 1 for development
+#
+# OPTIONAL:
+# ---------
+# PAYMENT_GATEWAY - Payment gateway provider (e.g., Razorpay)
+# DEFAULT_CURRENCY - Default currency for payments (default: USD)
+# RAZORPAY_KEY_ID - Razorpay API key (if using Razorpay)
+# RAZORPAY_KEY_SECRET - Razorpay API secret (if using Razorpay)
+# APPLY_GST - Apply GST on payments (0 or 1)
+# UNSPLASH_ACCESS_KEY - Unsplash API key for image integration
+# LIVECODE_URL - LiveCode server URL for code execution
+# MAIL_SERVER - SMTP server hostname
+# MAIL_PORT - SMTP server port (default: 587)
+# MAIL_LOGIN - SMTP username
+# MAIL_PASSWORD - SMTP password
+# MAIL_USE_TLS - Use TLS encryption (0 or 1)
+# WORKERS - Number of background workers (default: 2)
+# GUNICORN_WORKERS - Number of Gunicorn workers (default: 4)
+# PORT - Application port (Railway sets this automatically, default: 8000)
+#
+# ============================================================================
+# Deployment Notes
+# ============================================================================
+#
+# 1. Create Required Services on Railway:
+#    - MariaDB database service
+#    - Redis service
+#    - This application service
+#
+# 2. Configure Service Dependencies:
+#    - Ensure database and Redis are started before the application
+#    - Use Railway's internal service names for DB_HOST and REDIS_URL
+#
+# 3. Set Environment Variables:
+#    - All REQUIRED variables must be set before first deployment
+#    - Use Railway's environment variable UI for secure credential storage
+#    - Update SITE_NAME with your Railway-provided domain
+#
+# 4. Database Initialization:
+#    - On first deployment, the entrypoint script will:
+#      * Initialize Frappe bench
+#      * Create the database site
+#      * Install the LMS application
+#      * Run database migrations
+#
+# 5. Subsequent Deployments:
+#    - The entrypoint script detects existing installations
+#    - Only runs necessary migrations and updates
+#    - Preserves your data and configurations
+#
+# 6. Health Checks:
+#    - Railway will check /api/method/frappe.ping every few seconds
+#    - Deployment is considered healthy when this endpoint returns 200 OK
+#    - First deployment may take 3-5 minutes due to initialization
+#
+# 7. Production Recommendations:
+#    - Set FRAPPE_DEVELOPER_MODE=0 for production
+#    - Configure mail server for user notifications
+#    - Use strong passwords for MARIADB_ROOT_PASSWORD and ADMIN_PASSWORD
+#    - Scale WORKERS and GUNICORN_WORKERS based on your Railway plan
+#    - Enable custom domain and SSL certificate in Railway dashboard
+#
+# 8. Troubleshooting:
+#    - Check Railway logs for deployment issues
+#    - Verify all required environment variables are set
+#    - Ensure database and Redis services are running
+#    - Check health check endpoint is responding
+#
+# For more information:
+# - Railway Documentation: https://docs.railway.app/
+# - Frappe LMS Documentation: https://github.com/frappe/lms
+# - Frappe Framework Documentation: https://frappeframework.com/
+#
+# ============================================================================

@@ -1,0 +1,96 @@
+# Docker Compose for Local Testing (Railway Environment Simulation)
+# This file simulates Railway environment for local testing
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: lms
+      MYSQL_USER: lms
+      MYSQL_PASSWORD: lmspassword
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lms_network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - lms_network
+
+  lms:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      # Site Configuration
+      SITE_NAME: lms.localhost
+      FRAPPE_SITE_NAME_HEADER: lms.localhost
+
+      # Database Configuration
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_NAME: lms
+      DB_ROOT_PASSWORD: rootpassword
+
+      # Redis Configuration
+      REDIS_CACHE: redis://redis:6379
+      REDIS_QUEUE: redis://redis:6379
+      REDIS_SOCKETIO: redis://redis:6379
+
+      # Admin Configuration
+      ADMIN_PASSWORD: admin
+
+      # Application Configuration
+      PORT: 8000
+      DEVELOPER_MODE: 1
+      ALLOW_TESTS: 0
+    ports:
+      - "8000:8000"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - lms_network
+    volumes:
+      # Mount sites directory for persistence during development
+      - sites_data:/home/frappe/frappe-bench/sites
+      - logs_data:/home/frappe/frappe-bench/logs
+
+volumes:
+  mariadb_data:
+    driver: local
+  redis_data:
+    driver: local
+  sites_data:
+    driver: local
+  logs_data:
+    driver: local
+
+networks:
+  lms_network:
+    driver: bridge

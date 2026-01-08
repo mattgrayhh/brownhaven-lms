@@ -1,0 +1,122 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:10.8
+    container_name: lms-mariadb
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+      - --max-connections=500
+      - --innodb-buffer-pool-size=1G
+      - --innodb-log-file-size=256M
+      - --innodb-flush-log-at-trx-commit=2
+      - --innodb-flush-method=O_DIRECT
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme123}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-frappe}
+      MARIADB_USER: ${MARIADB_USER:-frappe}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-frappe}
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    networks:
+      - lms-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  redis:
+    image: redis:alpine
+    container_name: lms-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    networks:
+      - lms-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lms-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      # Database Configuration
+      DB_HOST: db
+      DB_PORT: 3306
+      MARIADB_HOST: db
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-changeme123}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-frappe}
+      MARIADB_USER: ${MARIADB_USER:-frappe}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-frappe}
+
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      REDIS_CACHE: redis://redis:6379/0
+      REDIS_QUEUE: redis://redis:6379/1
+      REDIS_SOCKETIO: redis://redis:6379/2
+
+      # Site Configuration
+      SITE_NAME: ${SITE_NAME:-lms.localhost}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+
+      # Application Configuration
+      FRAPPE_DEVELOPER_MODE: ${FRAPPE_DEVELOPER_MODE:-0}
+      FRAPPE_ENV: ${FRAPPE_ENV:-production}
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$host}
+
+      # Performance & Security
+      WORKERS: ${WORKERS:-4}
+      GUNICORN_TIMEOUT: ${GUNICORN_TIMEOUT:-120}
+
+      # Railway specific (optional)
+      RAILWAY_ENVIRONMENT: ${RAILWAY_ENVIRONMENT:-production}
+      RAILWAY_SERVICE_NAME: ${RAILWAY_SERVICE_NAME:-lms}
+    volumes:
+      - frappe-sites:/home/frappe/frappe-bench/sites
+      - frappe-logs:/home/frappe/frappe-bench/logs
+    networks:
+      - lms-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/method/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+
+networks:
+  lms-network:
+    driver: bridge
+
+volumes:
+  mariadb-data:
+    driver: local
+  redis-data:
+    driver: local
+  frappe-sites:
+    driver: local
+  frappe-logs:
+    driver: local
