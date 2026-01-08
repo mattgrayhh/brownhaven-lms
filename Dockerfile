@@ -227,6 +227,16 @@ echo "=== Procfile ===" \n\
 cat ./Procfile\n\
 echo "================"\n\
 \n\
+# Update Procfile to use the correct port from Railway\n\
+APP_PORT="${PORT:-8000}"\n\
+echo "Using port: $APP_PORT"\n\
+sed -i "s/--port 8000/--port $APP_PORT/" ./Procfile\n\
+sed -i "s/bench serve/bench serve --port $APP_PORT/" ./Procfile\n\
+\n\
+echo "=== Updated Procfile ===" \n\
+cat ./Procfile\n\
+echo "================"\n\
+\n\
 # Start bench\n\
 exec bench start\n\
 ' > /home/frappe/entrypoint.sh && chmod +x /home/frappe/entrypoint.sh
