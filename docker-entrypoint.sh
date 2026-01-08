@@ -87,15 +87,28 @@ print(f"  redis_url: {redis_url}")
 EOF
 
 # Install LMS app if not already installed
-if [ ! -d "apps/lms" ]; then
+# Check both directory AND apps.txt to handle partial installations
+LMS_INSTALLED=0
+if [ -d "apps/lms" ] && grep -q "^lms$" apps.txt 2>/dev/null; then
+    LMS_INSTALLED=1
+    echo "LMS app already installed in bench"
+fi
+
+if [ "$LMS_INSTALLED" = "0" ]; then
     echo "Installing LMS app..."
     if [ -d "/workspace/lms" ]; then
-        # Copy app to apps directory
+        # Copy app to apps directory (remove old if exists)
+        rm -rf apps/lms 2>/dev/null || true
         cp -r /workspace/lms apps/lms
 
         # Add lms to apps.txt (Frappe's app registry)
         # apps.txt is at bench root level, not inside apps/
+        # Remove existing entry if any, then add
+        grep -v "^lms$" apps.txt > apps.txt.tmp 2>/dev/null || true
+        mv apps.txt.tmp apps.txt 2>/dev/null || true
         echo "lms" >> apps.txt
+        echo "apps.txt contents after update:"
+        cat apps.txt
 
         # Install Python package in editable mode
         ./env/bin/pip install -e apps/lms
