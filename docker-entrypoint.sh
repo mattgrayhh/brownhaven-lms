@@ -72,6 +72,10 @@ config["redis_queue"] = redis_url
 config["redis_socketio"] = redis_url
 config["socketio_port"] = 9000
 
+# MySQL compatibility - disable strict mode for TEXT column defaults
+# Railway uses MySQL instead of MariaDB
+config["db_type"] = "mysql"
+
 # Write config
 os.makedirs("sites", exist_ok=True)
 with open(config_path, "w") as f:
