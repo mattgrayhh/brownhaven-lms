@@ -15,13 +15,12 @@ dockerfilePath = "Dockerfile"
 # The entrypoint.sh handles initialization, database setup, and starts the app
 startCommand = "/home/frappe/entrypoint.sh"
 
-# Health check configuration
-# Uses Frappe's built-in ping endpoint to verify the application is running
-healthcheckPath = "/api/method/frappe.ping"
+# Health check configuration - use root path for basic check
+healthcheckPath = "/"
 
 # Health check timeout in seconds (5 minutes)
 # Frappe initialization can take time, especially on first deployment
-healthcheckTimeout = 300
+healthcheckTimeout = 600
 
 # Restart policy configuration
 # Restart the container if it fails unexpectedly
