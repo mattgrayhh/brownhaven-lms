@@ -22,6 +22,12 @@ COPY frontend/ .
 
 # Build frontend (output goes to ../lms/public/frontend/)
 COPY lms/ /app/lms/
+
+# Create mock Frappe sites config needed for frontend build
+# The socketio_port is read during build but used at runtime
+RUN mkdir -p /app/sites && \
+    echo '{"socketio_port": 9000}' > /app/sites/common_site_config.json
+
 RUN npm run build
 
 # ============================================
