@@ -112,21 +112,21 @@ wait_for_service "$REDIS_HOST" "$REDIS_PORT" "Redis"\n\
 cd /home/frappe\n\
 \n\
 # Initialize bench - check if Frappe is properly installed\n\
-cd frappe-bench 2>/dev/null || cd /home/frappe\n\
-if [ ! -d "frappe-bench/apps/frappe/frappe" ] || ! bench --version >/dev/null 2>&1; then\n\
+BENCH_DIR=/home/frappe/frappe-bench\n\
+if [ ! -d "$BENCH_DIR/apps/frappe/frappe" ]; then\n\
     echo "Initializing Frappe bench..."\n\
-    rm -rf frappe-bench 2>/dev/null || true\n\
-    bench init --skip-redis-config-generation --frappe-branch ${FRAPPE_BRANCH:-version-15} frappe-bench\n\
+    rm -rf "$BENCH_DIR" 2>/dev/null || true\n\
+    bench init --skip-redis-config-generation --frappe-branch ${FRAPPE_BRANCH:-version-15} "$BENCH_DIR"\n\
 fi\n\
-cd /home/frappe/frappe-bench\n\
+cd "$BENCH_DIR"\n\
+echo "Working directory: $(pwd)"\n\
 \n\
 # Configure database and Redis\n\
 echo "Configuring services..."\n\
-bench set-config -g db_host "${DB_HOST:-mariadb}"\n\
-bench set-config -g db_port "${DB_PORT:-3306}"\n\
-bench set-config -g redis_cache "${REDIS_URL:-redis://redis:6379}"\n\
-bench set-config -g redis_queue "${REDIS_URL:-redis://redis:6379}"\n\
-bench set-config -g redis_socketio "${REDIS_URL:-redis://redis:6379}"\n\
+bench set-mariadb-host "${DB_HOST:-mariadb}"\n\
+bench set-redis-cache-host "${REDIS_URL:-redis://redis:6379}"\n\
+bench set-redis-queue-host "${REDIS_URL:-redis://redis:6379}"\n\
+bench set-redis-socketio-host "${REDIS_URL:-redis://redis:6379}"\n\
 \n\
 # Remove redis and watch from Procfile (they run externally)\n\
 sed -i "/redis/d" ./Procfile 2>/dev/null || true\n\
