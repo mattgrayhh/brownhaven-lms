@@ -45,19 +45,6 @@ fi
 cd "$BENCH_DIR"
 echo "Working directory: $(pwd)"
 
-# Debug: Find where apps.txt is located
-echo "=== Debug: Looking for apps.txt ==="
-find . -name "apps.txt" -type f 2>/dev/null | head -5
-echo "=== Debug: Contents of current directory ==="
-ls -la | head -15
-if [ -f apps.txt ]; then
-    echo "apps.txt exists at $(pwd)/apps.txt with contents:"
-    cat apps.txt
-else
-    echo "apps.txt does NOT exist at $(pwd)/apps.txt"
-fi
-echo "=== End Debug ==="
-
 # Configure common_site_config.json directly using Python for proper JSON handling
 echo "Configuring services via Python..."
 python3 << 'EOF'
@@ -101,8 +88,10 @@ EOF
 
 # Install LMS app if not already installed
 # Check both directory AND apps.txt to handle partial installations
+# NOTE: apps.txt is at sites/apps.txt in Frappe bench v15
+APPS_TXT="sites/apps.txt"
 LMS_INSTALLED=0
-if [ -d "apps/lms" ] && grep -q "^lms$" apps.txt 2>/dev/null; then
+if [ -d "apps/lms" ] && grep -q "^lms$" "$APPS_TXT" 2>/dev/null; then
     LMS_INSTALLED=1
     echo "LMS app already installed in bench"
 fi
@@ -115,20 +104,20 @@ if [ "$LMS_INSTALLED" = "0" ]; then
         cp -r /workspace/lms apps/lms
 
         # Add lms to apps.txt (Frappe's app registry)
-        # apps.txt is at bench root level, not inside apps/
-        echo "Current apps.txt before update:"
-        cat apps.txt 2>/dev/null || echo "(apps.txt does not exist)"
+        # apps.txt is at sites/apps.txt in Frappe bench v15
+        echo "Current $APPS_TXT before update:"
+        cat "$APPS_TXT" 2>/dev/null || echo "(apps.txt does not exist)"
 
-        # Only add lms if not already present (safer than grep -v approach)
-        if ! grep -q "^lms$" apps.txt 2>/dev/null; then
-            echo "lms" >> apps.txt
-            echo "Added lms to apps.txt"
+        # Only add lms if not already present
+        if ! grep -q "^lms$" "$APPS_TXT" 2>/dev/null; then
+            echo "lms" >> "$APPS_TXT"
+            echo "Added lms to $APPS_TXT"
         else
-            echo "lms already in apps.txt"
+            echo "lms already in $APPS_TXT"
         fi
 
-        echo "apps.txt contents after update:"
-        cat apps.txt
+        echo "$APPS_TXT contents after update:"
+        cat "$APPS_TXT"
 
         # Install Python package in editable mode
         ./env/bin/pip install -e apps/lms
