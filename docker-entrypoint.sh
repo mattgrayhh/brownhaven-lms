@@ -90,10 +90,10 @@ EOF
 if [ ! -d "apps/lms" ]; then
     echo "Installing LMS app..."
     if [ -d "/workspace/lms" ]; then
-        cp -r /workspace/lms apps/lms
-        bench setup requirements --node
+        # Use bench get-app with local path to properly install dependencies
+        bench get-app /workspace/lms --skip-assets
     else
-        bench get-app lms
+        bench get-app lms --skip-assets
     fi
 fi
 
