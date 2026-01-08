@@ -2,7 +2,8 @@
 # Frappe LMS Production Dockerfile
 # Uses official Frappe Bench image
 # ============================================
-FROM frappe/bench:latest
+# Use Python 3.11 based bench image for Frappe v15 compatibility
+FROM python:3.11-bookworm
 
 # Set environment variables
 ENV FRAPPE_BRANCH=version-15 \
@@ -15,23 +16,60 @@ ENV FRAPPE_BRANCH=version-15 \
     REDIS_URL=redis://redis:6379 \
     DEVELOPER_MODE=0
 
-# Switch to root for setup
-USER root
-
-# Install additional dependencies for LMS and networking tools
+# Install system dependencies for Frappe
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build essentials
+    git \
+    curl \
+    wget \
+    gnupg \
+    # Database client
+    mariadb-client \
+    # Redis
+    redis-tools \
+    # Python build dependencies
+    build-essential \
+    libffi-dev \
+    libssl-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libwebp-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libldap2-dev \
+    libsasl2-dev \
+    # Cairo for PDF generation
     libcairo2 \
     libcairo2-dev \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
+    # Other utilities
     netcat-openbsd \
+    supervisor \
+    wkhtmltopdf \
+    xvfb \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18 LTS
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g yarn
+
+# Create frappe user
+RUN useradd -m -d /home/frappe -s /bin/bash frappe
+
+# Install frappe-bench
+RUN pip install --upgrade pip && pip install frappe-bench
 
 # Copy LMS app source
 COPY --chown=frappe:frappe . /workspace/lms/
 
-# Switch back to frappe user
+# Create frappe bench directory
+RUN mkdir -p /home/frappe/frappe-bench && chown -R frappe:frappe /home/frappe
+
+# Switch to frappe user
 USER frappe
 WORKDIR /home/frappe
 
