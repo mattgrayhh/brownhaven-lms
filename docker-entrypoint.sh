@@ -45,6 +45,19 @@ fi
 cd "$BENCH_DIR"
 echo "Working directory: $(pwd)"
 
+# Debug: Find where apps.txt is located
+echo "=== Debug: Looking for apps.txt ==="
+find . -name "apps.txt" -type f 2>/dev/null | head -5
+echo "=== Debug: Contents of current directory ==="
+ls -la | head -15
+if [ -f apps.txt ]; then
+    echo "apps.txt exists at $(pwd)/apps.txt with contents:"
+    cat apps.txt
+else
+    echo "apps.txt does NOT exist at $(pwd)/apps.txt"
+fi
+echo "=== End Debug ==="
+
 # Configure common_site_config.json directly using Python for proper JSON handling
 echo "Configuring services via Python..."
 python3 << 'EOF'
