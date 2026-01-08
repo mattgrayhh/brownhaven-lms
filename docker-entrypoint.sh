@@ -103,10 +103,17 @@ if [ "$LMS_INSTALLED" = "0" ]; then
 
         # Add lms to apps.txt (Frappe's app registry)
         # apps.txt is at bench root level, not inside apps/
-        # Remove existing entry if any, then add
-        grep -v "^lms$" apps.txt > apps.txt.tmp 2>/dev/null || true
-        mv apps.txt.tmp apps.txt 2>/dev/null || true
-        echo "lms" >> apps.txt
+        echo "Current apps.txt before update:"
+        cat apps.txt 2>/dev/null || echo "(apps.txt does not exist)"
+
+        # Only add lms if not already present (safer than grep -v approach)
+        if ! grep -q "^lms$" apps.txt 2>/dev/null; then
+            echo "lms" >> apps.txt
+            echo "Added lms to apps.txt"
+        else
+            echo "lms already in apps.txt"
+        fi
+
         echo "apps.txt contents after update:"
         cat apps.txt
 
